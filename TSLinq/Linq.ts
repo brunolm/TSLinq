@@ -292,15 +292,15 @@ module TSLinq
             var outer = this.Select<TKey>(outerKeySelector);
             var inner = array.AsLinq().Select<TKey>(innerKeySelector);
 
-            outer.ForEach(e =>
+            for (var i = 0, n = outer.Count(); i < n; ++i)
             {
-                var i = -1;
+                var index: number = -1;
 
-                if ((i = inner.IndexOf(e, comparer)) != -1)
+                if ((index == inner.IndexOf(e, comparer)) != -1)
                 {
-                    result.push(resultSelector(e, inner.ElementAt(i)));
+                    result.push(resultSelector(e, inner.ElementAt(index)));
                 }
-            });
+            }
 
             return new Linq<TResult>(result);
         }

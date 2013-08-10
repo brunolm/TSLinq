@@ -61,5 +61,16 @@
     <TypeScriptCompile Include="UnitTest.ts" />
     <TypeScriptCompile Include="Linq.test.ts" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Linq.min.js">
+      <DependentUpon>Linq.ts</DependentUpon>
+    </Content>
+    <Content Include="Linq.test.min.js">
+      <DependentUpon>Linq.test.ts</DependentUpon>
+    </Content>
+    <Content Include="UnitTest.min.js">
+      <DependentUpon>UnitTest.ts</DependentUpon>
+    </Content>
+  </ItemGroup>
   <Import Project="$(VSToolsPath)\TypeScript\Microsoft.TypeScript.targets" />
 </Project>

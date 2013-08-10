@@ -219,23 +219,23 @@ class LinqTest
 
     Join(): void
     {
-        var joinedSimple = [1].AsLinq().Join([1], o => o, i => i, (o, i) => { return { Outter: o, Inner: i } });
+        var joinedSimple = [1].AsLinq<number>().Join([1], o => o, i => i, (o, i) => { return { Outer: o, Inner: i } });
         Assert.AreEqual(1, joinedSimple.Count(), "Element count is wrong.");
-        Assert.AreEqual(1, joinedSimple.First().Outter);
+        Assert.AreEqual(1, joinedSimple.First().Outer);
         Assert.AreEqual(1, joinedSimple.First().Inner);
 
         var joined = [{ ID: 1, Value: 1 }].AsLinq()
             .Join([{ ID: 1, Value: 2 }]
                 , o => o
                 , i => i
-                , (o, i) => { return { Outter: o.Value, Inner: i.Value } }
+                , (o, i) => { return { Outer: o.Value, Inner: i.Value } }
                 , {
                     Equals: (x, y) => x.ID == y.ID,
                     GetHashCode: (obj) => obj.ID
                 }
             );
         Assert.AreEqual(1, joined.Count(), "Element count with comparer is wrong.");
-        Assert.AreEqual(1, joined.First().Outter);
+        Assert.AreEqual(1, joined.First().Outer);
         Assert.AreEqual(2, joined.First().Inner);
     }
 
