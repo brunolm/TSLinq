@@ -221,8 +221,8 @@ class LinqTest
     {
         var joinedSimple = [1].AsLinq<number>().Join([1], o => o, i => i, (o, i) => { return { Outer: o, Inner: i } });
         Assert.AreEqual(1, joinedSimple.Count(), "Element count is wrong.");
-        Assert.AreEqual(1, joinedSimple.First().Outer);
-        Assert.AreEqual(1, joinedSimple.First().Inner);
+        Assert.AreEqual(1, (<any>joinedSimple.First()).Outer);
+        Assert.AreEqual(1, (<any>joinedSimple.First()).Inner);
 
         var joined = [{ ID: 1, Value: 1 }].AsLinq()
             .Join([{ ID: 1, Value: 2 }]

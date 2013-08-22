@@ -290,15 +290,18 @@ module TSLinq
             var result: TResult[] = [];
 
             var outer = this.Select<TKey>(outerKeySelector);
-            var inner = array.AsLinq().Select<TKey>(innerKeySelector);
+            var inner = array.AsLinq<TInner>().Select<TKey>(innerKeySelector);
 
             for (var i = 0, n = outer.Count(); i < n; ++i)
             {
-                var index: number = -1;
+                var outerKey = outer.ElementAt(i);
 
-                if ((index == inner.IndexOf(e, comparer)) != -1)
+                var index: number = -1;
+                if ((index = inner.IndexOf(outerKey, comparer)) != -1)
                 {
-                    result.push(resultSelector(e, inner.ElementAt(index)));
+                    var innerKey = inner.ElementAt(index);
+
+                    result.push(resultSelector(outerKey, innerKey));
                 }
             }
 
