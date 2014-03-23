@@ -2,7 +2,7 @@ module TSLinq
 {
     export class Linq<T>
     {
-        constructor(private a: T[] = [])
+        constructor(private a: T[]= [])
         {
             Object.defineProperty(this, "a", { value: a, writable: false });
         }
@@ -11,17 +11,17 @@ module TSLinq
         {
             var a;
             var current;
-            
+
             if ((a = this.a).length === 0)
                 throw "Aggregate of empty array";
-            
+
             current = a[0];
-            
+
             for (var i = 1, n = a.length; i < n; ++i)
             {
                 current = func(current, a[i]);
             }
-            
+
             return current;
         }
 
@@ -35,7 +35,7 @@ module TSLinq
                     return false;
                 }
             }
-            
+
             return true;
         }
 
@@ -57,8 +57,7 @@ module TSLinq
         {
             var a = this.a;
 
-            if (!selector)
-                selector = o => o;
+            selector = selector || (o => <any>o);
 
             var total = 0;
 
@@ -143,7 +142,7 @@ module TSLinq
 
             var result: T[] = [];
             var hashTable = {};
-            
+
             var e, eHash: number;
             var getHash = comparer ? comparer.GetHashCode : o => o.GetHashCode();
 
@@ -200,40 +199,40 @@ module TSLinq
 
         GroupBy<TKey, TElement>(keySelector: (e: T) => TKey
             , elementSelector?: (e: T) => TElement
-            , comparer?: IEqualityComparer<T>): any /* requires nested T */
+            , comparer?: IEqualityComparer<TKey>): Linq<any>
         {
+            elementSelector = elementSelector || (o => <any>o);
+            comparer = comparer || { Equals: (a, b) => a == b, GetHashCode: (e) => e.GetHashCode() };
+
             var a = this.a;
 
-            var hashTable = {};
-            var result: IGrouping<TKey, TElement>[] = [];
-
-            if (!elementSelector)
-                elementSelector = o => o;
-
-            var getHash = comparer ? comparer.GetHashCode : o => o.GetHashCode();
-
-            var key: TKey
-                , e: T
-                , eHash: number
-                , index: number
-                , group: IGrouping<TKey, TElement>;
+            var key: TKey, hashKey: number, reHashKey: number;
+            var hashs = {};
             for (var i = 0, n = a.length; i < n; ++i)
             {
-                e = a[i];
-                key = keySelector(e);
-                eHash = getHash(key);
+                reHashKey = undefined;
 
-                if (typeof(hashTable[eHash]) === "undefined")
-                    hashTable[eHash] = i;
+                key = keySelector(a[i]);
+                hashKey = comparer.GetHashCode(key);
 
-                index = hashTable[eHash];
+                if (typeof hashs[hashKey] !== "undefined")
+                    reHashKey = comparer.Equals(key, <TKey>hashs[hashKey].Key) ? hashKey : hashKey + i;
 
-                group = result[index] || { Key: key, Elements: [] };
-                group.Elements.push(elementSelector(e));
-                result[index] = group;
+                if (typeof reHashKey !== "undefined" && reHashKey !== hashKey)
+                    hashKey = reHashKey;
+
+                hashs[hashKey] = hashs[hashKey] || { Key: key, Elements: [] };
+                hashs[hashKey].Elements.push(elementSelector(a[i]));
             }
 
-            return new Linq(<any>result);
+            var keys = Object.keys(hashs);
+            var ret: IGrouping<TKey, T>[] = [];
+            for (var i = 0, n = keys.length; i < n; ++i)
+            {
+                ret.push(hashs[keys[i]]);
+            }
+
+            return new Linq<any>(ret);
         }
 
         IndexOf(e: T, comparer?: IEqualityComparer<T>): number
@@ -301,7 +300,7 @@ module TSLinq
                 {
                     var innerKey = inner.ElementAt(index);
 
-                    result.push(resultSelector(outerKey, innerKey));
+                    result.push(resultSelector(<any>outerKey, <any>innerKey));
                 }
             }
 
@@ -345,8 +344,7 @@ module TSLinq
             if (a.length === 0)
                 throw "Sequence contains no elements.";
 
-            if (!selector)
-                selector = o => o;
+            selector = selector || (o => <any>o);
 
             var max = selector(a[0]);
 
@@ -367,8 +365,7 @@ module TSLinq
             if (a.length === 0)
                 throw "Sequence contains no elements.";
 
-            if (!selector)
-                selector = o => o;
+            selector = selector || (o => <any>o);
 
             var min = selector(a[0]);
 
@@ -381,56 +378,28 @@ module TSLinq
 
             return min;
         }
-        
-        private orderBy<TKey>(keySelector: (e: T) => TKey, comparer, left, right): void
-        {
-            var a = this.a;
 
-			var l = left, r = right;
-            var pivot = keySelector(a[(l + r) >> 1]);
-            while (l <= r)
-            {
-                while (comparer(keySelector(a[l]), pivot) < 0) { l++; }
-                while (comparer(keySelector(a[r]), pivot) > 0) { r--; }
-                if (l <= r)
-                {
-                    var temp = a[l];
-                    a[l++] = a[r];
-                    a[r--] = temp;
-                }
-            }
-
-            if (left < l - 1)
-            {
-                this.orderBy(keySelector, comparer, left, l - 1);
-            }
-            if (right > l)
-            {
-                this.orderBy(keySelector, comparer, l, right);
-            }
-        }
         OrderBy<TKey>(keySelector: (e: T) => TKey, comparer?: (a: TKey, b: TKey) => number): Linq<T>
         {
-            if (!comparer)
-                comparer = (a, b) => <any>a - <any>b;
+            comparer = comparer || ((a, b) => <any>a > <any>b ? 1 : -1);
 
-            this.orderBy(keySelector, comparer, 0, this.a.length - 1);
+            this.a.sort((l, r) => comparer(keySelector(l), keySelector(r)));
             return this;
         }
 
         OrderByDescending<TKey>(keySelector: (e: T) => TKey, comparer?: (a: TKey, b: TKey) => number): Linq<T>
         {
-            if (!comparer)
-                comparer = (a, b) => <any>a - <any>b;
+            comparer = comparer || ((a, b) => <any>a > <any>b ? 1 : -1);
 
-            comparer = (function(comparer) {
+            comparer = (function (comparer)
+            {
                 return (a, b) => -comparer(a, b);
             })(comparer);
 
-            this.orderBy(keySelector, comparer, 0, this.a.length - 1);
+            this.a.sort((l, r) => comparer(keySelector(l), keySelector(r)));
             return this;
         }
-        
+
         Reverse(): Linq<T>
         {
             var right = this.a.length - 1;
@@ -457,7 +426,7 @@ module TSLinq
 
             return new Linq<TResult>(result);
         }
-        
+
         SelectMany<TResult>(selector: (e: T) => T[], resultSelector?: (e: T) => TResult): Linq<TResult>
         {
             var a = this.a;
@@ -470,13 +439,12 @@ module TSLinq
             }
 
             if (!resultSelector)
-                return result.AsLinq<T>();
+                return result.AsLinq<TResult>();
             else
                 return result.AsLinq<T>().Select<TResult>(resultSelector);
         }
 
-        // TODO: comparer review
-        SequenceEqual(second: T[], comparer?: IEqualityComparer<T>): boolean
+        SequenceEqual(second: T[], comparer?: (a: T, b: T) => boolean): boolean
         {
             var a = this.a;
 
@@ -499,7 +467,7 @@ module TSLinq
             {
                 for (var i = 0, n = a.length; i < n; i++)
                 {
-                    if (!comparer.Equals(a[i], second[i]))
+                    if (!comparer(a[i], second[i]))
                         return false;
                 }
             }
@@ -595,7 +563,7 @@ module TSLinq
             var a = this.a;
 
             var result = 0;
-            
+
             if (selector)
             {
                 for (var i = 0, n = a.length; i < n; ++i)
@@ -610,7 +578,7 @@ module TSLinq
                     result += <any>a[i];
                 }
             }
-            
+
             return result;
         }
 
@@ -655,7 +623,7 @@ module TSLinq
             var a = this.a;
             var result: T[] = [];
             var hashTable = {};
-            
+
             var e, eHash: number;
             var getHash = comparer ? comparer.GetHashCode : o => o.GetHashCode();
 
@@ -692,7 +660,7 @@ module TSLinq
 
             var e;
             var result: T[] = [];
-            
+
             for (var i = 0, n = a.length; i < n; ++i)
             {
                 e = a[i];
@@ -739,25 +707,67 @@ module TSLinq
     }
 }
 
-interface Array
+interface Array<T>
 {
     AsLinq<T>(): TSLinq.Linq<T>;
 }
-Array.prototype.AsLinq = function<T>(): TSLinq.Linq<T>
+Array.prototype.AsLinq = function <T>(): TSLinq.Linq<T>
 {
     return new TSLinq.Linq<T>(this);
 }
 
 interface Object { GetHashCode(): number; }
-Object.prototype.GetHashCode = function () {
-    var s: string = this instanceof Object ? JSON.stringify(this) : this.toString();
+Object.prototype.GetHashCode = function ()
+{
+    var s: string = this instanceof Object ? JSON.StringifyNonCircular(this) : this.toString();
 
     var hash = 0;
     if (s.length === 0) return hash;
-    for (var i = 0; i < s.length; ++i) {
+    for (var i = 0; i < s.length; ++i)
+    {
         hash = ((hash << 5) - hash) + s.charCodeAt(i);
     }
     return hash;
 };
 
 Number.prototype.GetHashCode = function () { return this.valueOf(); };
+
+interface Object { IsPlain(): boolean; }
+Object.prototype.IsPlain = function ()
+{
+    var obj;
+    if ((typeof (obj) !== "object" || obj.nodeType || (obj instanceof Window))
+        || (obj.constructor && !({}).hasOwnProperty.call(obj.constructor.prototype, "isPrototypeOf"))
+        )
+    {
+        return false;
+    }
+
+    return true;
+};
+
+interface JSON { StringifyNonCircular(obj: any): string; }
+JSON.StringifyNonCircular = function (obj)
+{
+    var s = s || "";
+
+    for (var i in obj)
+    {
+        var o = obj[i];
+
+        if (o && (o instanceof Array || o.IsPlain()))
+        {
+            s += i + ":" + JSON.stringify(o);
+        }
+        else if (o && typeof o === "object")
+        {
+            s += i + ":" + "$ref#" + o;
+        }
+        else
+        {
+            s += i + ":" + o;
+        }
+    }
+
+    return s;
+};

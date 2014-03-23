@@ -1,12 +1,16 @@
 /// <reference path="UnitTest.ts" />
-/// <reference path="linq.ts" />
+/// <reference path="Linq.ts" />
+
+declare var $: any;
 
 class LinqTest
 {
     Aggregate(): void
     {
+        Assert.AreEqual("2.0.3", $.fn.jquery);
+
         Assert.AreEqual(106
-            , [3, 100, 1, 2].AsLinq().Aggregate((a, b) => a + b)
+            , [3, 100, 1, 2].AsLinq<number>().Aggregate((a, b) => a + b)
         );
     }
 
@@ -28,7 +32,7 @@ class LinqTest
 
         Assert.AreEqual((3 + 100 + 1 + 2) / 4
             , [{ Value: 3 }, { Value: 100 }, { Value: 1 }, { Value: 2 }]
-                .AsLinq()
+                .AsLinq<any>()
                 .Average(o => o.Value)
         );
     }
@@ -90,7 +94,7 @@ class LinqTest
     DistinctBy(): void
     {
         var expected = [{ Value: 1 }, { Value: 2 }];
-        var actual = [{ Value: 1 }, { Value: 2 }, { Value: 1 }].AsLinq()
+        var actual = [{ Value: 1 }, { Value: 2 }, { Value: 1 }].AsLinq<any>()
             .DistinctBy(o => o.Value).ToArray();
         
         Assert.AreEqual(expected.length, actual.length);
@@ -167,12 +171,12 @@ class LinqTest
     ForEach(): void
     {
         var actual = 1;
-        [1, 2, 3].AsLinq().ForEach(i => actual *= i);
+        [1, 2, 3].AsLinq<number>().ForEach(i => actual *= i);
 
         Assert.AreEqual(6, actual);
 
         actual = 1;
-        [1, 2, 10, 110, 1110].AsLinq().ForEach(i => { if (i > 2) return false; actual *= i; });
+        [1, 2, 10, 110, 1110].AsLinq<number>().ForEach(i => { if (i > 2) return false; actual *= i; });
 
         Assert.AreEqual(2, actual);
     }
@@ -180,7 +184,7 @@ class LinqTest
     GroupBy(): void
     {
         var actual = [{ Key: 1, Value: 2 }, { Key: 1, Value: 3 }]
-            .AsLinq()
+            .AsLinq<any>()
             .GroupBy(o => o.Key);
 
         Assert.AreEqual(1, actual.Count());
@@ -224,7 +228,7 @@ class LinqTest
         Assert.AreEqual(1, (<any>joinedSimple.First()).Outer);
         Assert.AreEqual(1, (<any>joinedSimple.First()).Inner);
 
-        var joined = [{ ID: 1, Value: 1 }].AsLinq()
+        var joined = [{ ID: 1, Value: 1 }].AsLinq<any>()
             .Join([{ ID: 1, Value: 2 }]
                 , o => o
                 , i => i
@@ -258,14 +262,14 @@ class LinqTest
     Max(): void
     {
         Assert.AreEqual(10, [5, 7, 2, 10].AsLinq().Max());
-        Assert.AreEqual(10, [{ Value: 10 }, { Value: 7 }].AsLinq().Max(o => o.Value));
+        Assert.AreEqual(10, [{ Value: 10 }, { Value: 7 }].AsLinq<any>().Max(o => o.Value));
         Assert.Throws(() => [].AsLinq().Max());
     }
 
     Min(): void
     {
         Assert.AreEqual(2, [5, 7, 2, 10].AsLinq().Min());
-        Assert.AreEqual(7, [{ Value: 10 }, { Value: 7 }].AsLinq().Min(o => o.Value));
+        Assert.AreEqual(7, [{ Value: 10 }, { Value: 7 }].AsLinq<any>().Min(o => o.Value));
         Assert.Throws(() => [].AsLinq().Min());
     }
 
@@ -274,15 +278,20 @@ class LinqTest
         Assert.AreSequenceEqual([1, 2, 3], [3, 1, 2].AsLinq().OrderBy(o => o).ToArray(), null, "Failed to order");
 
         Assert.AreSequenceEqual([{ Value: 1 }, { Value: 2 }],
-            [{ Value: 2 }, { Value: 1 }].AsLinq().OrderBy(o => o.Value).ToArray()
+            [{ Value: 2 }, { Value: 1 }].AsLinq<any>().OrderBy(o => o.Value).ToArray()
             , (a, b) => a.Value == b.Value, "Failed to order objects");
 
         Assert.AreSequenceEqual([{ Value: 2 }, { Value: 1 }],
-            [{ Value: 1 }, { Value: 2 }].AsLinq()
+            [{ Value: 1 }, { Value: 2 }].AsLinq<any>()
                 .OrderBy(o => o.Value, (a, b) => b - a).ToArray()
             , (a, b) => a.Value == b.Value, "Failed to order object with comparer");
 
         Assert.AreSequenceEqual([], [].AsLinq().OrderBy(o => o).ToArray(), null, "Failed to order empty arrays");
+
+        Assert.AreSequenceEqual(["a", "b", "c"], ["c", "a", "b"].AsLinq().OrderBy(o => o).ToArray());
+
+        Assert.AreEqual("a"
+            , [{ Title: "b", Message: "b" }, { Title: "c", Message: "c" }, { Title: "a", Message: "a" }].AsLinq<any>().OrderBy(o => o.Title).First().Title);
     }
 
     OrderByDescending(): void
@@ -290,11 +299,11 @@ class LinqTest
         Assert.AreSequenceEqual([3, 2, 1], [3, 1, 2].AsLinq().OrderByDescending(o => o).ToArray(), null, "Failed to order");
 
         Assert.AreSequenceEqual([{ Value: 2 }, { Value: 1 }],
-            [{ Value: 1 }, { Value: 2 }].AsLinq().OrderByDescending(o => o.Value).ToArray()
+            [{ Value: 1 }, { Value: 2 }].AsLinq<any>().OrderByDescending(o => o.Value).ToArray()
             , (a, b) => a.Value == b.Value, "Failed to order objects");
 
         Assert.AreSequenceEqual([{ Value: 1 }, { Value: 2 }],
-            [{ Value: 2 }, { Value: 1 }].AsLinq()
+            [{ Value: 2 }, { Value: 1 }].AsLinq<any>()
                 .OrderByDescending(o => o.Value, (a, b) => b - a).ToArray()
             , (a, b) => a.Value == b.Value, "Failed to order object with comparer");
 
@@ -317,24 +326,24 @@ class LinqTest
         Assert.AreSequenceEqual(
             [1, 2, 3]
             , [{ Value: 1 }, { Value: 2 }, { Value: 3 }]
-                .AsLinq()
+                .AsLinq<any>()
                 .Select(o => o.Value).ToArray()
         );
     }
 
     SelectMany(): void
     {
-        Assert.AreSequenceEqual([], [].AsLinq().SelectMany(o => o).ToArray());
+        Assert.AreSequenceEqual([], [].AsLinq<any>().SelectMany(o => o).ToArray());
 
         Assert.AreSequenceEqual([1, 2, 3, 4, 5, 6]
-            , [[1, 2, 3], [4, 5, 6]].AsLinq().SelectMany(o => o).ToArray());
+            , [[1, 2, 3], [4, 5, 6]].AsLinq<any>().SelectMany(o => o).ToArray());
 
         Assert.AreSequenceEqual([1, 2, 3, 4]
-            , [{ Values: [1, 2] }, { Values: [3, 4] }].AsLinq()
+            , [{ Values: [1, 2] }, { Values: [3, 4] }].AsLinq<any>()
                 .SelectMany(o => o.Values).ToArray());
         
         Assert.AreSequenceEqual([10, 20, 30, 40]
-            , [{ Values: [1, 2] }, { Values: [3, 4] }].AsLinq()
+            , [{ Values: [1, 2] }, { Values: [3, 4] }].AsLinq<any>()
                 .SelectMany(o => o.Values, o => o * 10).ToArray());
     }
 
@@ -383,7 +392,7 @@ class LinqTest
     {
         Assert.AreEqual(0, [].AsLinq().Sum());
         Assert.AreEqual(10, [2, 2, 1, 5].AsLinq().Sum());
-        Assert.AreEqual(11, [{ Value: 2 }, { Value: 4 }, { Value: 5 }].AsLinq().Sum(o => o.Value));
+        Assert.AreEqual(11, [{ Value: 2 }, { Value: 4 }, { Value: 5 }].AsLinq<any>().Sum(o => o.Value));
     }
 
     Take(): void
@@ -421,7 +430,9 @@ class LinqTest
     }
 }
 
-(function() {
+(function ()
+{
+    /// <tstest_reference path="jquery.js" />
     var TestBase = {
         RegisterTestMethod: function (a, b, c=null) { }
     };

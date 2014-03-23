@@ -64,7 +64,9 @@ class Assert
             if (!equals(expected[i], actual[i]))
             {
                 throw "Assert.AreSequenceEqual failed. "
-                    + "Expected: <" + expected[i] + ">. Actual: <" + actual[i] + ">."
+                    + "Expected: <" + ((typeof (expected[i]) === "object") ? JSON.stringify(expected[i]) : <any>expected[i]) + ">. "
+                    + "Actual: <" + ((typeof (actual[i]) === "object") ? JSON.stringify(actual[i]) : <any>actual[i]) + ">. "
+                    + "At index '" + i + "'"
                     + message;
             }
         }
