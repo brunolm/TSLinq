@@ -2,7 +2,7 @@ module TSLinq
 {
     export class Linq<T>
     {
-        constructor(private a: T[]= [])
+        constructor(private a: T[] = [])
         {
             Object.defineProperty(this, "a", { value: a, writable: false });
         }
@@ -144,7 +144,7 @@ module TSLinq
             var hashTable = {};
 
             var e, eHash: number;
-            var getHash = comparer ? comparer.GetHashCode : o => o.GetHashCode();
+            var getHash = comparer ? comparer.GetHashCode : e => Object.GetHashCode(e);
 
             for (var i = 0, n = except.length; i < n; ++i)
             {
@@ -202,7 +202,7 @@ module TSLinq
             , comparer?: IEqualityComparer<TKey>): Linq<any>
         {
             elementSelector = elementSelector || (o => <any>o);
-            comparer = comparer || { Equals: (a, b) => a == b, GetHashCode: (e) => e.GetHashCode() };
+            comparer = comparer || { Equals: (a, b) => a == b, GetHashCode: (e) => Object.GetHashCode(e) };
 
             var a = this.a;
 
@@ -625,7 +625,7 @@ module TSLinq
             var hashTable = {};
 
             var e, eHash: number;
-            var getHash = comparer ? comparer.GetHashCode : o => o.GetHashCode();
+            var getHash = comparer ? comparer.GetHashCode : e => Object.GetHashCode(e);
 
             for (var i = 0, n = a.length; i < n; ++i)
             {
@@ -716,10 +716,13 @@ Array.prototype.AsLinq = function <T>(): TSLinq.Linq<T>
     return new TSLinq.Linq<T>(this);
 }
 
-interface Object { GetHashCode(): number; }
-Object.prototype.GetHashCode = function ()
+interface Object { GetHashCode(e): number; }
+Object.GetHashCode = function (e)
 {
-    var s: string = this instanceof Object ? JSON.StringifyNonCircular(this) : this.toString();
+    if (e instanceof Number)
+        return Number.GetHashCode(e);
+
+    var s: string = e instanceof Object ? JSON.StringifyNonCircular(e) : e.toString();
 
     var hash = 0;
     if (s.length === 0) return hash;
@@ -730,14 +733,13 @@ Object.prototype.GetHashCode = function ()
     return hash;
 };
 
-Number.prototype.GetHashCode = function () { return this.valueOf(); };
+Number.GetHashCode = function (e) { return e.valueOf(); };
 
-interface Object { IsPlain(): boolean; }
-Object.prototype.IsPlain = function ()
+interface Object { IsPlain(e): boolean; }
+Object.IsPlain = function (e)
 {
-    var obj;
-    if ((typeof (obj) !== "object" || obj.nodeType || (obj instanceof Window))
-        || (obj.constructor && !({}).hasOwnProperty.call(obj.constructor.prototype, "isPrototypeOf"))
+    if ((typeof (e) !== "object" || e.nodeType || (e instanceof Window))
+        || (e.constructor && !({}).hasOwnProperty.call(e.constructor.prototype, "isPrototypeOf"))
         )
     {
         return false;

@@ -7,8 +7,6 @@ class LinqTest
 {
     Aggregate(): void
     {
-        Assert.AreEqual("2.0.3", $.fn.jquery);
-
         Assert.AreEqual(106
             , [3, 100, 1, 2].AsLinq<number>().Aggregate((a, b) => a + b)
         );
