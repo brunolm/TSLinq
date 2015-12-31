@@ -421,7 +421,7 @@ module TSLinq
 
             for (var i = 0, n = a.length; i < n; ++i)
             {
-                result.push(selector(a[i]));
+                result.push(selector(a[i], i));
             }
 
             return new Linq<TResult>(result);
